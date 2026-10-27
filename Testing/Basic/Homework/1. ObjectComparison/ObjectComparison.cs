@@ -1,4 +1,5 @@
-﻿using NUnit.Framework;
+﻿using FluentAssertions;
+using NUnit.Framework;
 using NUnit.Framework.Legacy;
 
 namespace HomeExercise.Tasks.ObjectComparison;
@@ -15,15 +16,14 @@ public class ObjectComparison
             new Person("Vasili III of Russia", 28, 170, 60, null));
 
         // Перепишите код на использование Fluent Assertions.
-        ClassicAssert.AreEqual(actualTsar.Name, expectedTsar.Name);
-        ClassicAssert.AreEqual(actualTsar.Age, expectedTsar.Age);
-        ClassicAssert.AreEqual(actualTsar.Height, expectedTsar.Height);
-        ClassicAssert.AreEqual(actualTsar.Weight, expectedTsar.Weight);
-
-        ClassicAssert.AreEqual(expectedTsar.Parent!.Name, actualTsar.Parent!.Name);
-        ClassicAssert.AreEqual(expectedTsar.Parent.Age, actualTsar.Parent.Age);
-        ClassicAssert.AreEqual(expectedTsar.Parent.Height, actualTsar.Parent.Height);
-        ClassicAssert.AreEqual(expectedTsar.Parent.Parent, actualTsar.Parent.Parent);
+        
+        actualTsar.Should().BeEquivalentTo(expectedTsar, options =>
+            options.Excluding(person => person.Id)
+                .Excluding(person => person.Parent.Id));
+        
+        // Мое решение лучше, чем решение в тесте CheckCurrentTsar_WithCustomEquality, потому что при добавлении новых свойств 
+        // объекта тестирования в моем коде ничего менять не надо будет, максимум, если это поле сравнивать не надо. А в том решении
+        // придется постоянно менять тесты при каждом изменении кода. 
     }
 
     [Test]
@@ -36,6 +36,10 @@ public class ObjectComparison
 
         // Какие недостатки у такого подхода? 
         ClassicAssert.True(AreEqual(actualTsar, expectedTsar));
+        // Главный недостаток такого подхода заключается в том, что при провале теста тестировщик получит практически 0 информации.
+        // Не понятно в каком именно поле произошла ошибка. Также, в отличие от изначального подхода тестирования, этот подход
+        // рекурсивно проверяет совпадение отцов, то есть мы проверяем не только ли отец короля совпадает, но и его дедушка, прадедушка ...
+        // не сказать, что это плохо, но это отличается от изначального подхода, в котором сверялись только с отцом.
     }
 
     private bool AreEqual(Person? actual, Person? expected)

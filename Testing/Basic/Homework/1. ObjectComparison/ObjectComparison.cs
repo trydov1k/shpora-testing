@@ -1,8 +1,10 @@
 ﻿using FluentAssertions;
+using FluentAssertions.Equivalency;
 using NUnit.Framework;
 using NUnit.Framework.Legacy;
 
 namespace HomeExercise.Tasks.ObjectComparison;
+
 public class ObjectComparison
 {
     [Test]
@@ -16,11 +18,10 @@ public class ObjectComparison
             new Person("Vasili III of Russia", 28, 170, 60, null));
 
         // Перепишите код на использование Fluent Assertions.
-        
+
         actualTsar.Should().BeEquivalentTo(expectedTsar, options =>
-            options.Excluding(person => person.Id)
-                .Excluding(person => person.Parent.Id));
-        
+            options.Excluding((IMemberInfo member) => member.Name == nameof(Person.Id)));
+
         // Мое решение лучше, чем решение в тесте CheckCurrentTsar_WithCustomEquality, потому что при добавлении новых свойств 
         // объекта тестирования в моем коде ничего менять не надо будет, максимум, если это поле сравнивать не надо. А в том решении
         // придется постоянно менять тесты при каждом изменении кода. 

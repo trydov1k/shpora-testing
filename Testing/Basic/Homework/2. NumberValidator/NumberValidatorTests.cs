@@ -6,117 +6,82 @@ namespace HomeExercise.Tasks.NumberValidator;
 [TestFixture]
 public class NumberValidatorTests
 {
-    [Test]
-    public void CreateNumberValidator_ThrowsArgumentException_OnNegativePrecision()
+    [TestCase(-1, 2, true, TestName = "Constructor_ThrowsArgumentException_OnNegativePrecision")]
+    [TestCase(1, -1, true, TestName = "Constructor_ThrowsArgumentException_OnNegativeScale")]
+    [TestCase(1, 2, true, TestName = "Constructor_ThrowsArgumentException_OnScaleGreaterThanPrecision")]
+    [TestCase(1, 1, true, TestName = "Constructor_ThrowsArgumentException_OnScaleEqualToPrecision")]
+    public void CreateNumberValidator_ThrowsArgumentException(int precision, int scale, bool onlyPositive)
     {
-        var action = () => new NumberValidator(-1, 2, true);
-        action.Should().Throw<ArgumentException>();
-    }
-    
-    [Test]
-    public void CreateNumberValidator_ThrowsArgumentException_OnNegativeScale()
-    {
-        var action = () => new NumberValidator(1, -1, true);
-        action.Should().Throw<ArgumentException>();
-    }
-    
-    [Test]
-    public void CreateNumberValidator_ThrowsArgumentException_OnScaleGreaterThanPrecision()
-    {
-        var action = () => new NumberValidator(1, 2, true);
+        var action = () => new NumberValidator(precision, scale, onlyPositive);
+
         action.Should().Throw<ArgumentException>();
     }
 
-
-    [Test]
-    public void CreateNumberValidator_ThrowsArgumentException_OnScaleEqualToPrecision()
-    {
-        var action = () => new NumberValidator(1, 1, true);
-        action.Should().Throw<ArgumentException>();
-    }
-
-    [Test]
-    public void IsValidNumber_ReturnsFalse_OnNullString()
+    [TestCase(null, TestName = "IsValidNumber_ReturnsFalse_OnNullString")]
+    [TestCase("", TestName = "IsValidNumber_ReturnsFalse_OnEmptyString")]
+    public void IsValidNumber_ReturnsFalse_OnMissingValue(string? input)
     {
         var validator = new NumberValidator(17, 2, true);
-        
-        var result = validator.IsValidNumber(null!);
-        result.Should().BeFalse();
-    }
-    
-    [Test]
-    public void IsValidNumber_ReturnsFalse_OnEmptyString()
-    {
-        var validator = new NumberValidator(17, 2, true);
-        
-        var result = validator.IsValidNumber("");
+
+        var result = validator.IsValidNumber(input!);
+
         result.Should().BeFalse();
     }
 
-    [Test]
-    public void IsValidNumber_ReturnsTrue_OnZeroWithFractionalPart()
+    [TestCase("0.0", TestName = "IsValidNumber_ReturnsTrue_OnZeroWithFractionalPart")]
+    [TestCase("0", TestName = "IsValidNumber_ReturnsTrue_OnIntegerZero")]
+    public void IsValidNumber_ReturnsTrue_OnZero(string input)
     {
         var validator = new NumberValidator(17, 2, true);
-        var result = validator.IsValidNumber("0.0");
+
+        var result = validator.IsValidNumber(input);
+
         result.Should().BeTrue();
     }
-    
-    [Test]
-    public void IsValidNumber_ReturnsTrue_OnIntegerZero()
+
+    [TestCase(true, false,
+        TestName = "IsValidNumber_ReturnsFalse_OnNegativeZero_WhenOnlyPositiveEnabled")]
+    [TestCase(false, true,
+        TestName = "IsValidNumber_ReturnsTrue_OnNegativeZero_WhenOnlyPositiveDisabled")]
+    public void IsValidNumber_ChecksNegativeZero(bool onlyPositive, bool expected)
     {
-        var validator = new NumberValidator(17, 2, true);
-        var result = validator.IsValidNumber("0");
-        result.Should().BeTrue();
-    }
-    
-    [Test]
-    public void IsValidNumber_ReturnsFalse_WhenDigitCountExceedsPrecision()
-    {
-        var validator = new NumberValidator(3, 2, true);
-        var result = validator.IsValidNumber("00.00");
-        result.Should().BeFalse();
-    }
-    
-    [Test]
-    public void IsValidNumber_ReturnsFalse_OnNegativeZero_WhenOnlyPositiveEnabled()
-    {
-        var validator = new NumberValidator(17, 2, true);
+        var validator = new NumberValidator(17, 2, onlyPositive);
+
         var result = validator.IsValidNumber("-0.00");
-        result.Should().BeFalse();
+
+        result.Should().Be(expected);
     }
-    
-    [Test]
-    public void IsValidNumber_ReturnsTrue_OnNegativeZero_WhenOnlyPositiveDisabled()
+
+    [TestCase("00.00", 3, false,
+        TestName = "IsValidNumber_ReturnsFalse_WhenDigitCountExceedsPrecision")]
+    [TestCase("+1.23", 4, true,
+        TestName = "IsValidNumber_ReturnsTrue_WhenNumberWithPlusSignFitsPrecision")]
+    [TestCase("+1.23", 3, false,
+        TestName = "IsValidNumber_ReturnsFalse_WhenNumberWithPlusSignExceedsPrecision")]
+    public void IsValidNumber_ChecksPrecision(string input, int precision, bool expected)
     {
-        var validator = new NumberValidator(17, 2, false);
-        var result = validator.IsValidNumber("-0.00");
-        result.Should().BeTrue();
+        var validator = new NumberValidator(precision, 2, true);
+
+        var result = validator.IsValidNumber(input);
+
+        result.Should().Be(expected);
     }
-    
-    [Test]
-    public void IsValidNumber_ReturnsTrue_WhenNumberWithPlusSignFitsPrecision()
-    {
-        var validator = new NumberValidator(4, 2, true);
-        var result = validator.IsValidNumber("+1.23");
-        result.Should().BeTrue();
-    }
-    
-    [Test]
-    public void IsValidNumber_ReturnsFalse_WhenNumberWithPlusSignExceedsPrecision()
-    {
-        var validator = new NumberValidator(3, 2, true);
-        var result = validator.IsValidNumber("+1.23");
-        result.Should().BeFalse();
-    }
-    
-    [Test]
-    public void IsValidNumber_ReturnsFalse_WhenFractionalDigitCountExceedsScale()
+
+    [TestCase("0.0", true,
+        TestName = "IsValidNumber_ReturnsTrue_WhenFractionalDigitCountIsBelowScale")]
+    [TestCase("0.00", true,
+        TestName = "IsValidNumber_ReturnsTrue_WhenFractionalDigitCountEqualsScale")]
+    [TestCase("0.000", false,
+        TestName = "IsValidNumber_ReturnsFalse_WhenFractionalDigitCountExceedsScale")]
+    public void IsValidNumber_ChecksScale(string input, bool expected)
     {
         var validator = new NumberValidator(17, 2, true);
-        var result = validator.IsValidNumber("0.000");
-        result.Should().BeFalse();
+
+        var result = validator.IsValidNumber(input);
+
+        result.Should().Be(expected);
     }
-    
+
     [Test]
     public void IsValidNumber_ReturnsFalse_OnNonNumericString()
     {

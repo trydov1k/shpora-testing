@@ -82,6 +82,23 @@ public class NumberValidatorTests
         result.Should().Be(expected);
     }
 
+    [TestCase("++0.0",
+        TestName = "IsValidNumber_ReturnsFalse_WhenTwoSymbolsPlus")]
+    [TestCase("--0.0",
+        TestName = "IsValidNumber_ReturnsFalse_WhenTwoSymbolsMinus")]
+    [TestCase("+-0.0",
+        TestName = "IsValidNumber_ReturnsFalse_WhenTwoSymbolsMixed")]
+    [TestCase("-+-0.0",
+        TestName = "IsValidNumber_ReturnsFalse_WhenThreeSymbolsMixed")]
+    public void IsValidNumber_ChecksOnManySymbolBeforePoint(string input)
+    {
+        var validator = new NumberValidator(17, 2, false);
+        
+        var result = validator.IsValidNumber(input);
+
+        result.Should().Be(false);
+    }
+
     [Test]
     public void IsValidNumber_ReturnsFalse_OnNonNumericString()
     {
